@@ -2,38 +2,27 @@ import asyncio
 import logging
 import os
 import random
-import subprocess
-import time
 import requests
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 websites = {"test": "http://koncept-tech.com", "mine": "http://gamisticstudio.com"}
 
-async def fetch_data(site_name, url):
-    try:
-        logging.info(f"[!] Fetching data from {site_name}: {url}")
-        response = requests.get(url)
-        response.raise_for_status()
-        logging.info(f"[!] Successfully fetched data from {site_name}: Status code {response.status_code}")
-    except Exception as e:
-        logging.error(f"[x] Failed to fetch data from {site_name}: {e}")
-
 async def download_homepage(site_name, url):
-    current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, "websites", f"{site_name}.html")
-
     try:
         logging.info(f"[!] Downloading homepage of {site_name}: {url}")
-
-        if not (os.path.isdir(os.path.join(current_dir, "websites"))): os.mkdir(os.path.join(current_dir, "websites"))
-
-        result = subprocess.run(["wget", "--no-check-certificate", "-O", file_path, url], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"\n[!] Downloaded homepage of {site_name} to {file_path}")
-        logging.info(f"[!] Attack succesful for {site_name}!\n")
-    except subprocess.CalledProcessError as e:
-        logging.error(f"[x] Failed to download homepage of {site_name}: {e}")
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        current_dir = os.getcwd()
+        file_path = os.path.join(current_dir, "websites", f"{site_name}.html")
+        
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+        
+        logging.info(f"[!] Downloaded homepage of {site_name} to {file_path}")
     except Exception as e:
-        logging.error(f"\n{file_path}\n\n[x] An unexpected error occurred: {e}")
+        logging.error(f"[x] Failed to download homepage of {site_name}: {e}")
 
 async def delete_homepage(site_name):
     try:
@@ -47,9 +36,8 @@ async def delete_homepage(site_name):
 
 async def handle_site(site_name, url):
     try:
-        await fetch_data(site_name, url)
         await download_homepage(site_name, url)
-        # await delete_homepage(site_name)
+        await delete_homepage(site_name)
         logging.info(f"[+] Successfully completed tasks for {site_name}")
     except Exception as e:
         logging.error(f"[x] Failed to process {site_name}: {e}")
